@@ -39,6 +39,50 @@ def get_status(job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
     return jsonify(job), 200
+@app.route('/extract-identity', methods=['POST'])
+def extract_identity():
+    if "images" not in request.files:
+        return jsonify({"error": "images field is required"}), 400
+
+    files = request.files.getlist("images")
+    if len(files) == 0:
+        return jsonify({"error": "at least one image is required"}), 400
+
+    # TODO: Replace with real embedding model
+    embedding_dim = 512
+    dummy_embedding = [0.0] * embedding_dim
+
+    return jsonify({
+        "embedding": dummy_embedding,
+        "dimensions": embedding_dim
+    })
+
+
+@app.route('/generate-teaser', methods=['POST'])
+def generate_teaser():
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "JSON body required"}), 400
+
+    required = ["storyId", "chapterId", "choiceId", "sceneSpec", "shotSequence"]
+    missing = [f for f in required if f not in data]
+    if missing:
+        return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
+
+    # TODO: Replace with real video generation + stitching
+    import uuid
+    fake_id = str(uuid.uuid4())
+    fake_url = f"https://example.com/videos/{fake_id}.mp4"
+
+    shots_used = len(data["shotSequence"].get("shots", []))
+    duration = data["shotSequence"].get("totalDurationSeconds", 0)
+
+    return jsonify({
+        "videoUrl": fake_url,
+        "durationSeconds": duration,
+        "shotsUsed": shots_used,
+        "identityLocked": bool(data["sceneSpec"].get("identityToken"))
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
